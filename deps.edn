@@ -1,0 +1,9 @@
+{:paths ["src" "resources"]
+ :deps {thheller/shadow-cljs {:mvn/version "3.4.11"}
+        io.factorhouse/hsx   {:mvn/version "0.1.24"}
+        io.factorhouse/rfx   {:mvn/version "0.1.18"}}
+ :aliases
+ {:dev {:extra-deps {binaryage/devtools {:mvn/version "1.0.7"}}}
+  ;; Run the in-process (babashka-free) backend ON cljw:
+  ;;   cljw-wasm -M:cljw -m playground.server   (D-355)
+  :cljw {:extra-paths ["server"]}}}

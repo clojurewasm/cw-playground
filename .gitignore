@@ -1,0 +1,21 @@
+# Dependency / build caches — never committed.
+/node_modules
+/.shadow-cljs
+/.cpcache
+
+# run_local.sh clones + builds cljw here (first run)
+/.cache
+
+# Zig build cache (cljw build)
+**/.zig-cache
+
+# cargo / go wasm build output (regenerate via scripts/build_wasm.sh)
+**/target
+
+*.log
+.DS_Store
+
+# Frontend: the optimized release bundle (resources/public/js/main.js +
+# manifest.edn) IS committed so the repo deploys self-contained. Only the
+# dev-watch runtime dir (shadow-cljs `watch`) is excess and ignored.
+/resources/public/js/cljs-runtime

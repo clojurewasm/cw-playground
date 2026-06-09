@@ -1,0 +1,33 @@
+;; Starter snippets shown in the playground's "Examples" menu.
+[{:id "hello"        :title "Hello, ClojureWasm"
+  :code "(println \"Hello from ClojureWasm!\")\n(println \"Running on\" (System/getProperty \"os.name\"))"}
+
+ {:id "ratios"       :title "Exact arithmetic (ratios & bigint)"
+  :code ";; ClojureWasm keeps Clojure's numeric tower.\n(/ 1 3)\n(* 1/3 3)\n(reduce * (range 1 21)) ; 20!"}
+
+ {:id "seqs"         :title "Lazy sequences & transducers"
+  :code "(->> (range)\n     (filter even?)\n     (map #(* % %))\n     (take 10))\n\n(transduce (comp (filter odd?) (map inc)) + (range 100))"}
+
+ {:id "data"         :title "Maps, sets, destructuring"
+  :code "(def people [{:name \"Rich\"  :lang :clojure}\n             {:name \"Graydon\" :lang :rust}])\n\n(for [{:keys [name lang]} people]\n  (str name \" -> \" (clojure.string/upper-case (clojure.core/name lang))))"}
+
+ {:id "wasm-num"     :title "FFI: call a Rust number-theory module"
+  :code ";; numtheory.wasm was compiled from Rust to wasm32-unknown-unknown.\n(def m (wasm/load \"modules/numtheory.wasm\"))\n\n(println \"gcd(1071,462) =\" (wasm/call m \"gcd\" 1071 462))\n(println \"100th prime   =\" (wasm/call m \"nth_prime\" 100))\n(println \"7^256 mod 13  =\" (wasm/call m \"pow_mod\" 7 256 13))\n(println \"primes < 30   =\" (filter #(= 1 (wasm/call m \"is_prime\" %)) (range 2 30)))"}
+
+ {:id "wasm-float"   :title "FFI: Mandelbrot escape (f64 across the boundary)"
+  :code "(def mb (wasm/load \"modules/mandelbrot.wasm\"))\n\n;; Render a tiny ASCII Mandelbrot using a Rust f64 kernel.\n(doseq [y (range -1.0 1.05 0.08)]\n  (println\n    (apply str\n      (for [x (range -2.0 0.6 0.0315)]\n        (let [n (wasm/call mb \"escape\" x y 50)]\n          (nth \" .:-=+*#%@\" (min 9 (quot n 6))))))))"}
+
+ {:id "wasm-chaos"   :title "FFI: chaos (f64 in and f64 out)"
+  :code "(def ch (wasm/load \"modules/chaos.wasm\"))\n\n;; Logistic map across the period-doubling route to chaos.\n(doseq [r [2.8 3.2 3.5 3.9]]\n  (println (format \"r=%.1f -> %.5f\" r (wasm/call ch \"logistic\" r 0.5 200))))\n\n(println \"Lorenz x(t):\" (wasm/call ch \"lorenz_x\" 3000 0.005))"}
+
+ {:id "polyglot"     :title "Polyglot: Clojure orchestrating Rust"
+  :code ";; Clojure does the I/O and composition; Rust does the hot numeric loop.\n(def nt (wasm/load \"modules/numtheory.wasm\"))\n\n(defn euler-totient-sum [n]\n  (reduce + (map #(wasm/call nt \"totient\" %) (range 1 (inc n)))) )\n\n(println \"Sum of totients 1..100 =\" (euler-totient-sum 100))"}
+
+ {:id "go-json"      :title "Run a Go program: JSON pretty-printer"
+  :code ";; wasm/run executes a whole WASI command (here a Go program built with\n;; GOOS=wasip1) and captures its stdout/stderr/exit. Go's encoding/json runs\n;; inside ClojureWasm via the Wasm FFI.\n(def r (wasm/run \"modules/go_json.wasm\"\n         {:stdin \"{\\\"b\\\":2,\\\"a\\\":[3,1,2],\\\"nested\\\":{\\\"y\\\":1,\\\"x\\\":2}}\"}))\n(println \"exit:\" (:exit r))\n(print (:out r))"}
+
+ {:id "go-sha256"    :title "Run a Go program: SHA-256 (crypto/sha256)"
+  :code ";; Feed text on stdin; the Go program returns its SHA-256 hex digest.\n(def r (wasm/run \"modules/go_sha256.wasm\" {:stdin \"hello ClojureWasm\"}))\n(println \"sha256 =\" (clojure.string/trim (:out r)))"}
+
+ {:id "go-sort"      :title "Run a Go program: sort + dedup lines"
+  :code ";; Clojure builds the input; Go sorts & dedups it; Clojure reads the result.\n(def lines (clojure.string/join \"\\n\" [\"pear\" \"apple\" \"pear\" \"fig\" \"apple\" \"date\"]))\n(def r (wasm/run \"modules/go_sort.wasm\" {:args [\"sort\" \"-u\"] :stdin lines}))\n(println (:out r))"}]

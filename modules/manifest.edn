@@ -1,0 +1,41 @@
+;; Catalogue of the pre-built Wasm modules the playground exposes on its load path.
+;; Each module is compiled from Rust to wasm32-unknown-unknown (pure compute, no
+;; imports) and lives at modules/<file> inside the per-eval jail, so user code does
+;;   (def m (wasm/load "modules/numtheory.wasm"))
+;;   (wasm/call m "gcd" 48 36)
+;; The frontend renders this catalogue as a clickable reference panel.
+{:modules
+ [{:file "numtheory.wasm"
+   :lang "Rust"
+   :title "Number theory"
+   :blurb "Integer math: gcd / primality / modular exponentiation."
+   :fns [{:name "gcd"       :sig "(i64 i64) -> i64"  :doc "Greatest common divisor."        :example "(wasm/call m \"gcd\" 48 36)"}
+         {:name "lcm"       :sig "(i64 i64) -> i64"  :doc "Least common multiple."          :example "(wasm/call m \"lcm\" 4 6)"}
+         {:name "is_prime"  :sig "(i64) -> i32"      :doc "1 if prime, else 0."             :example "(wasm/call m \"is_prime\" 97)"}
+         {:name "nth_prime" :sig "(i32) -> i64"      :doc "The n-th prime (1-indexed)."     :example "(wasm/call m \"nth_prime\" 100)"}
+         {:name "pow_mod"   :sig "(i64 i64 i64) -> i64" :doc "(base^exp) mod m."            :example "(wasm/call m \"pow_mod\" 7 256 13)"}
+         {:name "totient"   :sig "(i64) -> i64"      :doc "Euler's totient phi(n)."         :example "(wasm/call m \"totient\" 36)"}]}
+  {:file "mandelbrot.wasm"
+   :lang "Rust"
+   :title "Mandelbrot"
+   :blurb "Escape-time fractal — demonstrates f64 arguments."
+   :fns [{:name "escape" :sig "(f64 f64 i32) -> i32" :doc "Iterations until |z|>2 for c=cx+cy*i (max_iter if bounded)." :example "(wasm/call m \"escape\" -0.745 0.113 1000)"}
+         {:name "escape_smooth_milli" :sig "(f64 f64 i32) -> i32" :doc "Continuous escape value x1000 for smooth colour banding." :example "(wasm/call m \"escape_smooth_milli\" -0.745 0.113 1000)"}]}
+  {:file "chaos.wasm"
+   :lang "Rust"
+   :title "Chaos"
+   :blurb "Chaotic dynamical systems — f64 in and f64 out."
+   :fns [{:name "logistic"     :sig "(f64 f64 i32) -> f64" :doc "Logistic map r*x*(1-x) after N steps." :example "(wasm/call m \"logistic\" 3.9 0.5 100)"}
+         {:name "lorenz_x"     :sig "(i32 f64) -> f64"     :doc "Lorenz attractor x after N Euler steps." :example "(wasm/call m \"lorenz_x\" 2000 0.005)"}
+         {:name "henon_escape" :sig "(f64 f64 i32) -> i32" :doc "Henon map iterations until divergence." :example "(wasm/call m \"henon_escape\" 1.4 0.3 10000)"}]}]
+ ;; WASI command modules — whole programs run via (wasm/run …), capturing stdout.
+ :commands
+ [{:file "go_json.wasm"   :lang "Go" :title "JSON pretty-printer"
+   :blurb "Go encoding/json. Pipe JSON on :stdin, get indented JSON."
+   :example "(:out (wasm/run \"modules/go_json.wasm\" {:stdin \"{\\\"b\\\":2,\\\"a\\\":1}\"}))"}
+  {:file "go_sha256.wasm" :lang "Go" :title "SHA-256"
+   :blurb "Go crypto/sha256. :stdin -> hex digest."
+   :example "(:out (wasm/run \"modules/go_sha256.wasm\" {:stdin \"hello\"}))"}
+  {:file "go_sort.wasm"   :lang "Go" :title "sort + dedup"
+   :blurb "Go sort. :stdin lines sorted; :args [\"sort\" \"-u\"] to dedup."
+   :example "(:out (wasm/run \"modules/go_sort.wasm\" {:args [\"sort\" \"-u\"] :stdin \"b\\na\\nb\"}))"}]}
