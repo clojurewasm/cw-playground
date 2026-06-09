@@ -103,12 +103,12 @@
          [:> Text {:c "red" :size "sm"} (:error result)])
        (when (seq (:out result))
          [:> Box {:component "pre"
-                  :style {:whiteSpace "pre-wrap" :margin 0 :fontSize "13px"
+                  :style {:whiteSpace "pre-wrap" :margin 0 :fontSize "15px"
                           :fontFamily "ui-monospace, SFMono-Regular, Menlo, monospace"}}
           (:out result)])
        (when (seq (:err result))
          [:> Box {:component "pre" :mt (if (seq (:out result)) "sm" 0)
-                  :style {:whiteSpace "pre-wrap" :margin 0 :fontSize "13px"
+                  :style {:whiteSpace "pre-wrap" :margin 0 :fontSize "15px"
                           :color "var(--mantine-color-red-7)"
                           :fontFamily "ui-monospace, SFMono-Regular, Menlo, monospace"}}
           (:err result)])

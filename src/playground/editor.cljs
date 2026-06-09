@@ -62,4 +62,4 @@
          (when @view-atom (.destroy @view-atom) (reset! view-atom nil))))
      #js [])
     [:div {:ref ref :style {:height "100%" :overflow "auto"
-                            :fontSize "14px" :background "#fff"}}]))
+                            :fontSize "16px" :background "#fff"}}]))
