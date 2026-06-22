@@ -33,7 +33,7 @@
    [:> Group {:gap "xs" :align "center"}
     (icon icons/lightning {:size 24 :weight "fill" :color "var(--mantine-color-indigo-6)"})
     [:> Title {:order 4} "ClojureWasm Playground"]
-    [:> Text {:size "xs" :c "dimmed"} "JVM-free Clojure, running in your terminal's runtime"]]
+    [:> Text {:size "xs" :c "dimmed"} "JVM-free Clojure with a JIT-compiled WebAssembly FFI"]]
    [:> Group {:gap "xs"}
     [health-badge]
     [:> Tooltip {:label "Source on GitHub"}
@@ -112,8 +112,19 @@
                           :color "var(--mantine-color-red-7)"
                           :fontFamily "ui-monospace, SFMono-Regular, Menlo, monospace"}}
           (:err result)])
+       ;; REPL-style return value of the final form (skip a bare nil — it's noise
+       ;; after a println-only program; show it for value-returning examples).
+       (let [v (:value result)]
+         (when (and (not (:error result)) (seq v) (not= v "nil"))
+           [:> Box {:component "pre"
+                    :mt (if (or (seq (:out result)) (seq (:err result))) "sm" 0)
+                    :style {:whiteSpace "pre-wrap" :margin 0 :fontSize "15px"
+                            :color "var(--mantine-color-indigo-7)"
+                            :fontFamily "ui-monospace, SFMono-Regular, Menlo, monospace"}}
+            (str "=> " v)]))
        (when (and (zero? (or (:exit result) 0))
-                  (empty? (:out result)) (empty? (:err result)))
+                  (empty? (:out result)) (empty? (:err result))
+                  (let [v (:value result)] (or (empty? v) (= "nil" v))))
          [:> Text {:c "dimmed" :size "sm"} "(no output)"])])))
 
 (defn- module-card [{:keys [file lang title blurb fns]}]
@@ -158,7 +169,7 @@
     [:> ScrollArea {:style {:height "100%"}}
      [:> Box {:p "md"}
       [:> Text {:size "xs" :c "dimmed" :mb "sm"}
-       "Pre-built WebAssembly on the load path. Click to insert a call."]
+       "Pre-built WebAssembly on the load path, JIT-compiled by default. Click to insert a call."]
       [:> Text {:size "xs" :fw 700 :tt "uppercase" :c "dimmed" :mb 6} "Rust — wasm/call (pure compute)"]
       (for [m modules] ^{:key (:file m)} [module-card m])
       (when (seq commands)

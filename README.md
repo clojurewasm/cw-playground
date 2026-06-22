@@ -6,6 +6,13 @@ evaluated **in-process** on the server's `cljw` under a per-submission budget
 (steps / deadline / heap), and can call sandboxed WebAssembly modules written in
 Rust and Go via `cljw`'s Wasm FFI.
 
+The Wasm FFI now runs **JIT-compiled by default** (cljw `v1.0.0-alpha.1`, embedding
+zwasm `v2.0.0-alpha.3`): `(wasm/load …)` transparently rides zwasm's `:auto`
+JIT-first engine, so a tight numeric loop inside a module executes as native machine
+code — the `engine-select` and `jit-speed` examples show a ten-million-step loop
+returning in a few milliseconds, byte-identical to the interpreter. The engine is a
+runtime default; pass `{:engine :interp}` / `{:engine :jit}` to pick one explicitly.
+
 ## What's inside
 
 - **Frontend** (`src/`, ClojureScript + shadow-cljs) — a CodeMirror editor + a

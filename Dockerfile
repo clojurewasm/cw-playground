@@ -2,14 +2,20 @@
 #
 # Symmetric with run_local.sh: cljw is built FROM SOURCE (clone the pinned
 # ClojureWasm ref + `zig build -Dwasm -Doptimize=ReleaseSafe`; zwasm resolves via
-# ClojureWasm's build.zig.zon tag pin — no sibling checkout). The build context is
-# THIS repo root, so "Deploy from GitHub" / `fly launch` works by selecting the
-# repo. See DEPLOY.md.
+# ClojureWasm's build.zig.zon tag pin (v2.0.0-alpha.3) — no sibling checkout). The
+# build context is THIS repo root, so "Deploy from GitHub" / `fly launch` works by
+# selecting the repo. See DEPLOY.md.
+#
+# The Wasm FFI runs JIT-compiled by default (cljw ref v1.0.0-alpha.1+: (wasm/load …)
+# defaults to zwasm's :auto = JIT engine). The JIT is a RUNTIME default, not a build
+# flag, so the build options below are unchanged. The JIT emits code for the actual
+# RUN machine's CPU (detected at runtime), so -Dcpu=baseline — which only bounds the
+# AOT host binary — does not gate it and the JIT does not reintroduce the SIGILL risk.
 
 # --- Stage 1: build cljw (linux, ReleaseSafe, -Dwasm) from source ---
 FROM debian:bookworm-slim AS build
 ARG ZIG_VERSION=0.16.0
-ARG CLJW_REF=cw-from-scratch
+ARG CLJW_REF=v1.0.0-alpha.1
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl xz-utils git && rm -rf /var/lib/apt/lists/*
 RUN arch="$(uname -m)" && \
