@@ -1,7 +1,7 @@
 # Running & deploying the ClojureWasm playground
 
 The app is **self-contained**: `cljw` is built from source (the pinned ClojureWasm
-ref `v1.0.0-alpha.1`, `-Dwasm` ReleaseSafe; zwasm `v2.0.0-alpha.3` resolves via
+ref `v1.0.0`, `-Dwasm` ReleaseSafe; zwasm `v2.0.0` resolves via
 ClojureWasm's `build.zig.zon` tag pin), and the SPA + Wasm modules are committed.
 Local and fly obtain `cljw` the same way — local via `run_local.sh`, fly via the
 root `Dockerfile`. The Wasm FFI runs **JIT-compiled by default** — a runtime engine

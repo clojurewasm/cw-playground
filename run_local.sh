@@ -4,11 +4,11 @@
 # cljw is built FROM SOURCE (no assumption about your machine, no sibling repo):
 # the pinned ClojureWasm ref is cloned and built ReleaseSafe with -Dwasm (the
 # WebAssembly FFI the playground's eval needs). zwasm resolves automatically via
-# ClojureWasm's build.zig.zon tag pin (v2.0.0-alpha.3). The build is cached under
+# ClojureWasm's build.zig.zon tag pin (v2.0.0). The build is cached under
 # .cache/ (first run only). This is the SAME way the Dockerfile obtains cljw —
 # local and fly are symmetric.
 #
-# The Wasm FFI runs JIT-compiled by default: cljw's pinned ref (v1.0.0-alpha.1+)
+# The Wasm FFI runs JIT-compiled by default: cljw's pinned ref (v1.0.0+)
 # defaults (wasm/load …) to zwasm's :auto = JIT engine, so the modules under
 # modules/ execute as native code with a transparent interpreter fallback. The
 # JIT is a RUNTIME default, not a build flag — the build options are unchanged.
@@ -22,7 +22,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-CLJW_REF="${CLJW_REF:-v1.0.0-alpha.1}"
+CLJW_REF="${CLJW_REF:-v1.0.0}"
 CACHE_DIR=".cache/cljw"
 CLJW="${CLJW:-$CACHE_DIR/zig-out/bin/cljw}"
 
