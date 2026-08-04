@@ -74,10 +74,16 @@
       :else {:status 404 :headers {"content-type" "text/plain"} :body "not found"})))
 
 (defn- handle-eval [req]
-  (let [body (some-> (:body req) json/decode)
-        code (:code body)
-        res  (sandbox/run code)]
-    (json-resp (if (:error res) 400 200) res)))
+  ;; A body that is not JSON is the caller's error, not ours: json/decode throws,
+  ;; and an uncaught throw here is served as 500 — which reads as "the playground
+  ;; broke" and hides a 400 from anyone reading logs. `sandbox/run` already
+  ;; rejects a non-string :code, so decoding is the only unguarded step.
+  (if-let [body (try (some-> (:body req) json/decode) (catch Throwable _ ::bad))]
+    (if (= body ::bad)
+      (json-resp 400 {:error "request body must be JSON"})
+      (let [res (sandbox/run (:code body))]
+        (json-resp (if (:error res) 400 200) res)))
+    (json-resp 400 (sandbox/run nil))))
 
 (defn handler [req]
   (let [uri (:uri req) m (:request-method req)]
