@@ -1,7 +1,7 @@
 # Running & deploying the ClojureWasm playground
 
 The app is **self-contained**: `cljw` is built from source (the pinned ClojureWasm
-ref `v1.7.0`, `-Dwasm` ReleaseSafe; zwasm `v2.4.0` resolves via
+ref `v1.8.0`, `-Dwasm` ReleaseSafe; zwasm `v2.4.1` resolves via
 ClojureWasm's `build.zig.zon` tag pin), and the SPA + Wasm modules are committed.
 Local and fly obtain `cljw` the same way — local via `run_local.sh`, fly via the
 root `Dockerfile`. The Wasm FFI runs **JIT-compiled by default** — a runtime engine
@@ -42,8 +42,16 @@ toolchains needed, since the SPA + Wasm are committed) and runs it in a slim
 stage 2. Scale-to-zero is on (`auto_stop_machines`), so an idle demo costs
 nothing. Tune the per-eval budgets via `fly.toml [env]` (`PG_EVAL_*`).
 
-### Optional: auto-deploy on push (GitHub Actions)
+### Auto-deploy on push — already wired
 
-Add `.github/workflows/fly-deploy.yml` running `flyctl deploy --remote-only` on
-push to `main`, with a `FLY_API_TOKEN` repo secret
-([fly docs](https://fly.io/docs/launch/continuous-deployment-with-github-actions/)).
+`.github/workflows/fly-deploy.yml` runs `flyctl deploy --remote-only` on every
+push to `main`, and two deploys of this app never overlap (the workflow takes a
+`concurrency` group; a newer push cancels the one in flight).
+
+It needs a `FLY_API_TOKEN` repo secret (`fly tokens create deploy -a cw-playground`;
+[fly docs](https://fly.io/docs/launch/continuous-deployment-with-github-actions/)).
+Without it the workflow FAILS rather than skipping — a deploy you believed
+happened and did not is worse than a red check.
+
+**So: pushing to `main` deploys.** Land a change on a branch if you do not want
+that.

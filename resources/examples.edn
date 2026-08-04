@@ -2,6 +2,12 @@
 [{:id "hello"        :title "Hello, ClojureWasm"
   :code "(println \"Hello from ClojureWasm!\")\n(println \"Running on\" (System/getProperty \"os.name\"))"}
 
+ {:id "reducers" :title "Reducers: one-pass folds (clojure.core.reducers)"
+  :code ";; clojure.core.reducers landed in cljw v1.8.0. r/map and r/filter build a\n;; REDUCING function rather than a sequence, so a chain of them makes one\n;; pass with no intermediate collections — the same idea as a transducer,\n;; in the older API that a lot of existing Clojure still uses.\n(require '[clojure.core.reducers :as r])\n\n(println (into [] (r/map inc (r/filter even? (range 20)))))\n\n;; fold is SEQUENTIAL here — there is no thread pool, and its docstring\n;; says so — but the value is what upstream Clojure computes.\n(r/fold + (vec (range 10000)))"}
+
+ {:id "doc" :title "Read the docs from inside: doc / find-doc"
+  :code ";; cljw carries clojure.core's docstrings, so the REPL surface works here:\n;; (doc f) prints the signature and the prose, (find-doc re) searches them.\n;;\n;; Before v1.8.0 the metadata table covered 246 of 685 clojure.core vars and\n;; none of the native primitives — so reduce, assoc, conj, first and apply\n;; had no docstring, and find-doc answered \"no match\" for two thirds of core\n;; while looking like it had searched all of it.\n(require '[clojure.repl :refer [doc find-doc]])\n\n(doc reduce)\n(doc clojure.set/union)\n(find-doc \"reduce-kv\")"}
+
  {:id "ratios"       :title "Exact arithmetic (ratios & bigint)"
   :code ";; ClojureWasm keeps Clojure's numeric tower.\n(/ 1 3)\n(* 1/3 3)\n(reduce * (range 1 21)) ; 20!"}
 

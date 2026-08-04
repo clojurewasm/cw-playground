@@ -30,7 +30,8 @@ for c in numtheory mandelbrot chaos; do
 done
 
 # Go programs (GOOS=wasip1) — run via (wasm/run …) with a WASI host. Larger
-# (~3 MB each, Go runtime); gitignored, rebuilt from source here.
+# (~3 MB each, Go runtime). Committed, not gitignored — the repo deploys
+# self-contained (see PROVENANCE.md); this script rebuilds them from source.
 if command -v go >/dev/null 2>&1; then
   for g in json sha256 sort; do build_go "$g"; done
 else

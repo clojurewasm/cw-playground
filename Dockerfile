@@ -2,7 +2,7 @@
 #
 # Symmetric with run_local.sh: cljw is built FROM SOURCE (clone the pinned
 # ClojureWasm ref + `zig build -Dwasm -Doptimize=ReleaseSafe`; zwasm resolves via
-# ClojureWasm's build.zig.zon tag pin (v2.0.0) — no sibling checkout). The
+# ClojureWasm's build.zig.zon tag pin (v2.4.1) — no sibling checkout). The
 # build context is THIS repo root, so "Deploy from GitHub" / `fly launch` works by
 # selecting the repo. See DEPLOY.md.
 #
@@ -15,7 +15,7 @@
 # --- Stage 1: build cljw (linux, ReleaseSafe, -Dwasm) from source ---
 FROM debian:bookworm-slim AS build
 ARG ZIG_VERSION=0.16.0
-ARG CLJW_REF=v1.7.0
+ARG CLJW_REF=v1.8.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl xz-utils git && rm -rf /var/lib/apt/lists/*
 RUN arch="$(uname -m)" && \
