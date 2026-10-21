@@ -1,9 +1,12 @@
 (ns playground.api
   "Thin fetch wrapper. In shadow dev (served on :3000) the backend is a separate
-  origin (:8080, CORS-enabled); in the packaged build it is same-origin.")
+  origin (:8080, CORS-enabled); in the packaged build it is same-origin.
+  Paths are RELATIVE (`api/eval`, no leading slash) so they resolve under
+  whatever prefix the page is served at, e.g. /playground/ behind a gateway
+  that strips the prefix.")
 
 (def base
-  (if (= js/window.location.port "3000") "http://localhost:8080" ""))
+  (if (= js/window.location.port "3000") "http://localhost:8080/" ""))
 
 (defn- ->clj [js-obj] (js->clj js-obj :keywordize-keys true))
 

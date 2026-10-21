@@ -5,9 +5,9 @@
   (rfx/reg-event-fx :app/init
     (fn [{:keys [db]} _]
       {:db db
-       :http/get [{:path "/api/modules"  :on-ok [:modules/loaded]}
-                  {:path "/api/examples" :on-ok [:examples/loaded]}
-                  {:path "/api/health"   :on-ok [:health/loaded]}]}))
+       :http/get [{:path "api/modules"  :on-ok [:modules/loaded]}
+                  {:path "api/examples" :on-ok [:examples/loaded]}
+                  {:path "api/health"   :on-ok [:health/loaded]}]}))
 
   (rfx/reg-event-db :modules/loaded  (fn [db [_ body]] (assoc db :modules (:modules body) :commands (:commands body))))
   (rfx/reg-event-db :examples/loaded (fn [db [_ body]] (assoc db :examples body)))
@@ -17,7 +17,7 @@
   (rfx/reg-event-fx :app/run
     (fn [{:keys [db]} [_ code]]
       {:db (assoc db :running? true :active-tab :output)
-       :http/post {:path "/api/eval" :body {:code code}
+       :http/post {:path "api/eval" :body {:code code}
                    :on-ok [:app/run-result] :on-err [:app/run-error]}}))
 
   (rfx/reg-event-db :app/run-result
