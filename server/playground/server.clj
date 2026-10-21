@@ -89,6 +89,11 @@
   (let [uri (:uri req) m (:request-method req)]
     (cond
       (= m :options) {:status 204 :headers cors}
+      ;; Liveness/readiness probe: constant body, no eval, no file read.
+      (= uri "/healthz") {:status 200
+                          :headers {"content-type" "text/plain; charset=utf-8"
+                                    "cache-control" "no-store"}
+                          :body "ok"}
       (and (= uri "/api/eval") (= m :post)) (handle-eval req)
       (= uri "/api/modules")  (json-resp 200 @manifest)
       (= uri "/api/examples") (json-resp 200 @examples)
