@@ -6,8 +6,8 @@ evaluated **in-process** on the server's `cljw` under a per-submission budget
 (steps / deadline / heap), and can call sandboxed WebAssembly modules written in
 Rust and Go via `cljw`'s Wasm FFI.
 
-The Wasm FFI now runs **JIT-compiled by default** (cljw `v1.10.0`, embedding
-zwasm `v2.5.0`): `(wasm/load …)` transparently rides zwasm's `:auto`
+The Wasm FFI now runs **JIT-compiled by default** (cljw `v1.15.1`, embedding
+zwasm): `(wasm/load …)` transparently rides zwasm's `:auto`
 JIT-first engine, so a tight numeric loop inside a module executes as native machine
 code — the `engine-select` and `jit-speed` examples run a ten-million-step loop in
 **about 40 ms** (measured on an M4 Pro; the example prints its own `(time …)`, so
@@ -30,12 +30,13 @@ pick one explicitly.
 ## Run it
 
 ```sh
-./run_local.sh        # builds cljw from source on first run, serves http://localhost:8080
+./run_local.sh        # fetches the pinned cljw release on first run, serves http://localhost:8080
 ```
 
-Deploy to fly.io (or any container host) — see [`DEPLOY.md`](./DEPLOY.md). The repo
-is self-contained: only `cljw` is built from source (Zig); the SPA and Wasm
-modules are committed artifacts.
+Live at <https://cljw.buddhilw.com/playground/>. It ships as a container image,
+`ghcr.io/clojurewasm/cw-playground`; see [`DEPLOY.md`](./DEPLOY.md). The repo is
+self-contained: `cljw` is a pinned, sha256-verified release binary, and the SPA
+and Wasm modules are committed artifacts.
 
 ## License
 

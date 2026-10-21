@@ -1,57 +1,62 @@
-# Running & deploying the ClojureWasm playground
+# Running and deploying the ClojureWasm playground
 
-The app is **self-contained**: `cljw` is built from source (the pinned ClojureWasm
-ref `v1.10.0`, `-Dwasm` ReleaseSafe; zwasm `v2.5.0` resolves via
-ClojureWasm's `build.zig.zon` tag pin), and the SPA + Wasm modules are committed.
-Local and fly obtain `cljw` the same way — local via `run_local.sh`, fly via the
-root `Dockerfile`. The Wasm FFI runs **JIT-compiled by default** — a runtime engine
-choice, not a build flag, so the build options above are unchanged.
+The app is self-contained. `cljw` is the pinned release binary of
+[BuddhiLW/ClojureWasm](https://github.com/BuddhiLW/ClojureWasm/releases)
+(`v1.15.1`, ReleaseSafe with the Wasm FFI), checked against a pinned sha256.
+The SPA bundle (`resources/public/js`) and the Wasm modules (`modules/`) are
+committed artifacts (see [`PROVENANCE.md`](./PROVENANCE.md)).
 
 ## Local
 
 ```sh
-./run_local.sh                 # builds cljw on first run (~1 min), serves :8080
+./run_local.sh                 # fetches cljw on first run (cached in .cache/), serves :8080
 PG_PORT=9000 ./run_local.sh    # override any knob
 ```
-
-Needs `git` + Zig 0.16 for the one-time `cljw` build (cached in `.cache/`). The
-cljw build is the only from-source step; the frontend (`resources/public/js`) and
-Wasm modules (`modules/`) are committed artifacts (see
-[`PROVENANCE.md`](./PROVENANCE.md)).
 
 ### Rebuilding the artifacts (only when you change them)
 
 ```sh
-npm ci && npm run release      # rebuild the SPA → resources/public/js/main.js
-bash scripts/build_wasm.sh     # rebuild the Wasm modules → modules/*.wasm
+npm ci && npm run release      # rebuild the SPA into resources/public/js/main.js, then commit it
+bash scripts/build_wasm.sh     # rebuild the Wasm modules into modules/*.wasm
 ```
 
-## Deploy to fly.io
+## Container image
 
-Because the `Dockerfile` + `fly.toml` are at the repo root and the build context
-is the repo itself, you can deploy by **selecting this repo** in fly.io
-("Deploy from GitHub"), or from a checkout:
+`ghcr.io/clojurewasm/cw-playground`, tags `main-<7-char sha>` and `latest`.
+`.github/workflows/image.yml` builds and pushes it on every push to `main`.
+`.github/workflows/cljw-bump.yml` checks daily for a newer cljw release, verifies
+it, commits the new pin to `main` and publishes a fresh image.
 
 ```sh
-fly launch        # first time: creates the app from fly.toml
-fly deploy        # subsequent deploys
+docker build -t cw-playground .
+docker run --rm -p 8080:8080 --read-only --tmpfs /tmp cw-playground
 ```
 
-The image builds `cljw` from source in stage 1 (Zig only — no Node/Java/Rust/Go
-toolchains needed, since the SPA + Wasm are committed) and runs it in a slim
-stage 2. Scale-to-zero is on (`auto_stop_machines`), so an idle demo costs
-nothing. Tune the per-eval budgets via `fly.toml [env]` (`PG_EVAL_*`).
+The image runs as UID 10001 and works with a read-only root filesystem: it only
+writes to `/tmp`, which must be writable (an `emptyDir` in Kubernetes).
 
-### Auto-deploy on push — already wired
+| env | default | meaning |
+|---|---|---|
+| `PG_PORT` | `8080` | listen port (binds 0.0.0.0) |
+| `PG_PUBLIC_DIR` | `/app/resources/public` | static SPA root |
+| `PG_WASM_DIR` | `/app/modules` | Wasm modules + `manifest.edn` |
+| `PG_EXAMPLES` | `/app/resources/examples.edn` | example snippets |
+| `CLJW_FS_ROOT` | `/app` | FS jail for every slurp / File op |
+| `PG_EVAL_MAX_STEPS` | `50000000` | per-eval step budget |
+| `PG_EVAL_DEADLINE_MS` | `5000` | per-eval wall-clock budget |
+| `PG_EVAL_MAX_HEAP_MB` | `128` | per-eval heap budget |
 
-`.github/workflows/fly-deploy.yml` runs `flyctl deploy --remote-only` on every
-push to `main`, and two deploys of this app never overlap (the workflow takes a
-`concurrency` group; a newer push cancels the one in flight).
+Use `PG_EVAL_*`, never `CLJW_EVAL_*`: the latter arms a process-wide budget that
+would stop the server itself.
 
-It needs a `FLY_API_TOKEN` repo secret (`fly tokens create deploy -a cw-playground`;
-[fly docs](https://fly.io/docs/launch/continuous-deployment-with-github-actions/)).
-Without it the workflow FAILS rather than skipping — a deploy you believed
-happened and did not is worse than a red check.
+## Kubernetes
 
-**So: pushing to `main` deploys.** Land a change on a branch if you do not want
-that.
+Served at <https://cljw.buddhilw.com/playground/>. The gateway strips the
+`/playground` prefix, so the server sees `/`, `/api/eval`, `/js/main.js`. Every
+URL the page uses is relative, so the app works under any prefix; the gateway
+should redirect `/playground` to `/playground/`.
+
+- Probes: `GET /healthz` returns `200 ok` (no eval, no file read).
+- Container port `8080`; `securityContext`: `runAsNonRoot: true`,
+  `runAsUser: 10001`, `readOnlyRootFilesystem: true`; mount an `emptyDir` at
+  `/tmp`.
