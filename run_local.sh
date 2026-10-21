@@ -1,39 +1,41 @@
 #!/usr/bin/env bash
-# Run the ClojureWasm playground locally — machine-independent.
+# Run the ClojureWasm playground locally.
 #
-# cljw is built FROM SOURCE (no assumption about your machine, no sibling repo):
-# the pinned ClojureWasm ref is cloned and built ReleaseSafe with -Dwasm (the
-# WebAssembly FFI the playground's eval needs). zwasm resolves automatically via
-# ClojureWasm's build.zig.zon tag pin (v2.5.0). The build is cached under
-# .cache/ (first run only). This is the SAME way the Dockerfile obtains cljw —
-# local and fly are symmetric.
+# cljw comes from the pinned GitHub release of BuddhiLW/ClojureWasm, the same
+# release the Dockerfile installs (linux-x86_64 or macos-aarch64), verified
+# against the release's .sha256 sidecar and cached under .cache/ (first run
+# only).
 #
-# The Wasm FFI runs JIT-compiled by default: cljw's pinned ref (v1.0.0+)
-# defaults (wasm/load …) to zwasm's :auto = JIT engine, so the modules under
-# modules/ execute as native code with a transparent interpreter fallback. The
-# JIT is a RUNTIME default, not a build flag — the build options are unchanged.
-#
-#   ./run_local.sh                       # build cljw if needed, then serve :8080
+#   ./run_local.sh                       # fetch cljw if needed, then serve :8080
 #   PG_PORT=9000 ./run_local.sh          # override any env knob
-#   CLJW=/path/to/cljw ./run_local.sh    # use an existing cljw, skip the build
-#   CLJW_REF=<sha|branch> ./run_local.sh # pin a different ClojureWasm ref
+#   CLJW=/path/to/cljw ./run_local.sh    # use an existing cljw, skip the fetch
+#   CLJW_VERSION=vX.Y.Z ./run_local.sh   # try a different release
 #
-# Needs (one-time cljw build only): git + Zig 0.16 on PATH.
+# Needs (one-time fetch only): curl, tar, sha256sum or shasum.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-CLJW_REF="${CLJW_REF:-v1.10.0}"
-CACHE_DIR=".cache/cljw"
-CLJW="${CLJW:-$CACHE_DIR/zig-out/bin/cljw}"
+CLJW_VERSION="${CLJW_VERSION:-v1.15.1}"
+CACHE_DIR=".cache/cljw-$CLJW_VERSION"
+CLJW="${CLJW:-$CACHE_DIR/cljw}"
 
 if [ ! -x "$CLJW" ]; then
-  command -v git >/dev/null || { echo "git not found (needed to fetch cljw source)" >&2; exit 1; }
-  command -v zig >/dev/null || { echo "zig 0.16 not found (needed to build cljw)" >&2; exit 1; }
-  echo "Building cljw from source ($CLJW_REF) — first run only, ~1 min…"
-  rm -rf "$CACHE_DIR"
-  git clone --branch "$CLJW_REF" --depth 1 \
-    https://github.com/clojurewasm/ClojureWasm.git "$CACHE_DIR"
-  ( cd "$CACHE_DIR" && zig build -Dwasm -Doptimize=ReleaseSafe )
+  case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64)  asset=cljw-linux-x86_64.tar.gz ;;
+    Darwin-arm64)  asset=cljw-macos-aarch64.tar.gz ;;
+    *) echo "no prebuilt cljw for $(uname -s)-$(uname -m); set CLJW=/path/to/cljw" >&2; exit 1 ;;
+  esac
+  url="https://github.com/BuddhiLW/ClojureWasm/releases/download/$CLJW_VERSION/$asset"
+  echo "Fetching cljw $CLJW_VERSION ($asset), first run only"
+  rm -rf "$CACHE_DIR" && mkdir -p "$CACHE_DIR"
+  curl -fsSLo "$CACHE_DIR/$asset" "$url"
+  curl -fsSLo "$CACHE_DIR/$asset.sha256" "$url.sha256"
+  if command -v sha256sum >/dev/null; then
+    ( cd "$CACHE_DIR" && sha256sum -c "$asset.sha256" )
+  else
+    ( cd "$CACHE_DIR" && shasum -a 256 -c "$asset.sha256" )
+  fi
+  tar -xzf "$CACHE_DIR/$asset" -C "$CACHE_DIR" cljw
 fi
 
 export PG_PORT="${PG_PORT:-8080}"
@@ -41,11 +43,11 @@ export PG_PUBLIC_DIR="${PG_PUBLIC_DIR:-resources/public}"
 export PG_WASM_DIR="${PG_WASM_DIR:-modules}"
 export PG_EXAMPLES="${PG_EXAMPLES:-resources/examples.edn}"
 export CLJW_FS_ROOT="${CLJW_FS_ROOT:-$PWD}"   # FS-jail: confine slurp/File to the repo.
-# PG_EVAL_* bound each /api/eval submission via with-budget (sandbox.clj) — NOT the
+# PG_EVAL_* bound each /api/eval submission via with-budget (sandbox.clj), NOT the
 # CLJW_EVAL_* process-wide budget, which would meter (and kill) the server itself.
 export PG_EVAL_MAX_STEPS="${PG_EVAL_MAX_STEPS:-50000000}"
 export PG_EVAL_DEADLINE_MS="${PG_EVAL_DEADLINE_MS:-5000}"
 export PG_EVAL_MAX_HEAP_MB="${PG_EVAL_MAX_HEAP_MB:-128}"
 
-echo "ClojureWasm playground → http://localhost:$PG_PORT   (cljw: $CLJW)"
+echo "ClojureWasm playground: http://localhost:$PG_PORT   (cljw: $CLJW)"
 exec "$CLJW" -M:cljw -m playground.server

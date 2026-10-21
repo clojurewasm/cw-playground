@@ -1,4 +1,4 @@
-{:deps {:aliases [:dev]}
+{:deps {:aliases [:cljs :dev]}
  :nrepl {:port 9630}
  :dev-http {3000 "resources/public"}
  :js-options {:js-package-dirs ["node_modules"]}
