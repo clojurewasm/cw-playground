@@ -2,7 +2,7 @@
 
 The app is self-contained. `cljw` is the pinned release binary of
 [BuddhiLW/ClojureWasm](https://github.com/BuddhiLW/ClojureWasm/releases)
-(`v1.15.1`, ReleaseSafe with the Wasm FFI), checked against a pinned sha256.
+(`v1.15.3`, ReleaseSafe with the Wasm FFI), checked against a pinned sha256.
 The SPA bundle (`resources/public/js`) and the Wasm modules (`modules/`) are
 committed artifacts (see [`PROVENANCE.md`](./PROVENANCE.md)).
 
